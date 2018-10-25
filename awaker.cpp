@@ -18,7 +18,7 @@ void __start__() {
 LRESULT CALLBACK mainWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
   switch (msg) {
   case WM_CREATE: {
-    SetThreadExecutionState(ES_SYSTEM_REQUIRED | ES_CONTINUOUS);
+    SetThreadExecutionState(ES_AWAYMODE_REQUIRED | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_CONTINUOUS);
     return 0;
   }
   case WM_CLOSE: {
