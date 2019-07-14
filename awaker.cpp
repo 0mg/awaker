@@ -5,8 +5,6 @@
 #define C_WINDOW_CLASS TEXT("main_window_class")
 #define C_SCWIDTH GetSystemMetrics(SM_CXSCREEN)
 #define C_SCHEIGHT GetSystemMetrics(SM_CYSCREEN)
-#define C_FGCOLOR 0xFF000000
-#define C_BGCOLOR 0xFFFFFFFF
 
 LPCTSTR C_APPNAME_STR = C_APPNAME;
 
@@ -20,6 +18,22 @@ LRESULT CALLBACK mainWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
   case WM_CREATE: {
     SetThreadExecutionState(ES_AWAYMODE_REQUIRED | ES_DISPLAY_REQUIRED | ES_SYSTEM_REQUIRED | ES_CONTINUOUS);
     return 0;
+  }
+  case WM_KEYDOWN: // same to below
+  case WM_LBUTTONDOWN: {
+    SetWindowLongPtr(hwnd, GWL_STYLE, WS_VISIBLE | WS_OVERLAPPEDWINDOW);
+    SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, C_SCWIDTH / 2, C_SCHEIGHT / 2, SWP_NOMOVE);
+    while (ShowCursor(TRUE) < 0);
+    return 0;
+  }
+  case WM_SYSCOMMAND: {
+    if (wp == SC_MAXIMIZE) {
+      SetWindowLongPtr(hwnd, GWL_STYLE, WS_VISIBLE | WS_SYSMENU | WS_POPUP);
+      SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, C_SCWIDTH, C_SCHEIGHT, 0);
+      while (ShowCursor(FALSE) >= 0);
+      return 0;
+    }
+    break;
   }
   case WM_CLOSE: {
     DestroyWindow(hwnd);
@@ -47,7 +61,7 @@ int WINAPI WinMain(HINSTANCE hi, HINSTANCE hp, LPSTR cl, int cs) {
   wc.hInstance = hi;
   wc.hIcon = (HICON)LoadImage(hi, MAKEINTRESOURCE(C_APPICON), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
   wc.hCursor = (HCURSOR)LoadImage(NULL, IDC_ARROW, IMAGE_CURSOR, 0, 0, LR_SHARED);
-  wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+  wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
   wc.lpszClassName = C_WINDOW_CLASS;
   wc.hIconSm = (HICON)LoadImage(hi, MAKEINTRESOURCE(C_APPICON), IMAGE_ICON, 0, 0, LR_DEFAULTCOLOR);
   RegisterClassEx(&wc);
@@ -56,7 +70,7 @@ int WINAPI WinMain(HINSTANCE hi, HINSTANCE hp, LPSTR cl, int cs) {
   HWND hwnd = CreateWindowEx(
     WS_EX_LEFT,
     C_WINDOW_CLASS, C_APPNAME_STR,
-    WS_VISIBLE | WS_MINIMIZEBOX | WS_SYSMENU,
+    WS_VISIBLE | WS_OVERLAPPEDWINDOW,
     CW_USEDEFAULT, CW_USEDEFAULT,
     C_SCWIDTH / 2,
     C_SCHEIGHT / 2,
