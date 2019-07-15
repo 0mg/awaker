@@ -10,7 +10,9 @@ LPCTSTR C_APPNAME_STR = C_APPNAME;
 
 void __start__() {
   // program will start from here if `gcc -nostartfiles`
-  ExitProcess(WinMain(GetModuleHandle(NULL), 0, NULL, 0));
+  STARTUPINFO si;
+  GetStartupInfo(&si);
+  ExitProcess(WinMain(GetModuleHandle(NULL), 0, NULL, si.wShowWindow));
 }
 
 LRESULT CALLBACK mainWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
@@ -21,17 +23,22 @@ LRESULT CALLBACK mainWndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
   }
   case WM_KEYDOWN: // same to below
   case WM_LBUTTONDOWN: {
-    SetWindowLongPtr(hwnd, GWL_STYLE, WS_VISIBLE | WS_OVERLAPPEDWINDOW);
-    SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, C_SCWIDTH / 2, C_SCHEIGHT / 2, SWP_NOMOVE);
-    while (ShowCursor(TRUE) < 0);
+    PostMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
     return 0;
   }
   case WM_SYSCOMMAND: {
-    if (wp == SC_MAXIMIZE) {
-      SetWindowLongPtr(hwnd, GWL_STYLE, WS_VISIBLE | WS_SYSMENU | WS_POPUP);
-      SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, C_SCWIDTH, C_SCHEIGHT, 0);
+    switch (wp & 0xFFF0) {
+    case SC_MAXIMIZE: {
+      SetWindowLongPtr(hwnd, GWL_STYLE, WS_VISIBLE | WS_SYSMENU | WS_MAXIMIZEBOX | WS_MINIMIZEBOX | WS_POPUP);
       while (ShowCursor(FALSE) >= 0);
-      return 0;
+      break;
+    }
+    case SC_RESTORE: {
+      ShowWindow(hwnd, SW_RESTORE);
+      SetWindowLongPtr(hwnd, GWL_STYLE, WS_VISIBLE | WS_OVERLAPPEDWINDOW);
+      while (ShowCursor(TRUE) < 0);
+      break;
+    }
     }
     break;
   }
@@ -70,7 +77,7 @@ int WINAPI WinMain(HINSTANCE hi, HINSTANCE hp, LPSTR cl, int cs) {
   HWND hwnd = CreateWindowEx(
     WS_EX_LEFT,
     C_WINDOW_CLASS, C_APPNAME_STR,
-    WS_VISIBLE | WS_OVERLAPPEDWINDOW,
+    (cs == SW_MAXIMIZE ? 0 : WS_VISIBLE) | WS_OVERLAPPEDWINDOW,
     CW_USEDEFAULT, CW_USEDEFAULT,
     C_SCWIDTH / 2,
     C_SCHEIGHT / 2,
@@ -78,6 +85,9 @@ int WINAPI WinMain(HINSTANCE hi, HINSTANCE hp, LPSTR cl, int cs) {
   );
   // WinMain() must return 0 before msg loop
   if (hwnd == NULL) return 0;
+  if (cs == SW_MAXIMIZE) {
+    PostMessage(hwnd, WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+  }
 
   // main
   MSG msg;
